@@ -22,7 +22,7 @@ jobs:
       matrix:
         platform: [tg5040, tg5050, h700]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Core revision
         run: |
@@ -31,7 +31,7 @@ jobs:
             echo "CORE_REF=${{ inputs.core_ref }}" >> "$GITHUB_ENV"
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: ${{ env.CORE_REPO }}
           ref: ${{ env.CORE_REF }}
@@ -40,7 +40,7 @@ jobs:
       - name: Build
         run: ./scripts/build-core.sh ${{ matrix.platform }} core cores/${{ matrix.platform }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: core-${{ matrix.platform }}
           path: cores/${{ matrix.platform }}/yabadabadoo_libretro.so
@@ -52,7 +52,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Core revision
         run: |
@@ -62,13 +62,13 @@ jobs:
           fi
 
       # for the license files and the revision written in version.txt
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: ${{ env.CORE_REPO }}
           ref: ${{ env.CORE_REF }}
           path: core
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: core-*
           path: artifacts
@@ -82,7 +82,7 @@ jobs:
           done
           ./scripts/make-zip.sh cores core dist
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Yabadabadoo-NextUI
           path: dist/*.zip
