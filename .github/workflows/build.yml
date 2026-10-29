@@ -1,0 +1,110 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      core_ref:
+        description: "Yabadabadoo commit, branch or tag (default: CORE_REF in core.env)"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    # the toolchain images are arm64
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      matrix:
+        platform: [tg5040, tg5050, h700]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Core revision
+        run: |
+          cat core.env | grep -v '^#' >> "$GITHUB_ENV"
+          if [ -n "${{ inputs.core_ref }}" ]; then
+            echo "CORE_REF=${{ inputs.core_ref }}" >> "$GITHUB_ENV"
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ env.CORE_REF }}
+          path: core
+
+      - name: Build
+        run: ./scripts/build-core.sh ${{ matrix.platform }} core cores/${{ matrix.platform }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-${{ matrix.platform }}
+          path: cores/${{ matrix.platform }}/yabadabadoo_libretro.so
+          if-no-files-found: error
+
+  package:
+    needs: core
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Core revision
+        run: |
+          cat core.env | grep -v '^#' >> "$GITHUB_ENV"
+          if [ -n "${{ inputs.core_ref }}" ]; then
+            echo "CORE_REF=${{ inputs.core_ref }}" >> "$GITHUB_ENV"
+          fi
+
+      # for the license files and the revision written in version.txt
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ env.CORE_REF }}
+          path: core
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: core-*
+          path: artifacts
+
+      - name: Package
+        run: |
+          for d in artifacts/core-*; do
+            p=${d#artifacts/core-}
+            mkdir -p cores/$p
+            cp $d/yabadabadoo_libretro.so cores/$p/
+          done
+          ./scripts/make-zip.sh cores core dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Yabadabadoo-NextUI
+          path: dist/*.zip
+          if-no-files-found: error
+
+      # a v* tag must be pak.json's version (the Pak Store downloads the release
+      # of that tag) and have its notes in release-notes/<tag>.md
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(jq -r .version pak.json)
+          if [ "$GITHUB_REF_NAME" != "$version" ]; then
+            echo "tag $GITHUB_REF_NAME is not pak.json's version $version" >&2
+            exit 1
+          fi
+          rev=$(git -C core rev-parse HEAD)
+          cp "release-notes/$version.md" notes.md
+          printf '\n## Source\n\nBuilt from %s@%s: https://github.com/%s/tree/%s\n' \
+            "$CORE_REPO" "${rev:0:9}" "$CORE_REPO" "$rev" >> notes.md
+          core_version=$(echo "$version" | sed 's/^v\([0-9]*\.[0-9]*\.[0-9]*\)\.\([0-9]*\)$/\1, package \2/')
+          gh release create "$version" dist/*.zip \
+            --title "SATURN.pak $version (Yabadabadoo $core_version)" \
+            --notes-file notes.md

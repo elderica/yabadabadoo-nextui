@@ -1,0 +1,5 @@
+core/
+cores/
+artifacts/
+*.zip
+dist/
