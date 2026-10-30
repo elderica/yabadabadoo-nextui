@@ -29,6 +29,7 @@ USA/Europe) and games in `Roms/Sega Saturn (SATURN)/`. The log of the last run i
 `v<Yabadabadoo version>.<package release>`, eg. `v0.3.0.1` is the first package of
 Yabadabadoo 0.3 (written with three numbers). The Pak Store compares the four numbers.
 `pak.json`'s `version`, the release tag and `release-notes/<version>.md` go together.
+An empty `release-notes/<version>.prerelease` makes the release a pre-release.
 
 ## Build
 

@@ -105,6 +105,10 @@ jobs:
           printf '\n## Source\n\nBuilt from %s@%s: https://github.com/%s/tree/%s\n' \
             "$CORE_REPO" "${rev:0:9}" "$CORE_REPO" "$rev" >> notes.md
           core_version=$(echo "$version" | sed 's/^v\([0-9]*\.[0-9]*\.[0-9]*\)\.\([0-9]*\)$/\1, package \2/')
-          gh release create "$version" dist/*.zip \
+          # release-notes/<tag>.prerelease marks a pre-release (the Pak Store's
+          # numeric tags can't say it)
+          pre=
+          [ -f "release-notes/$version.prerelease" ] && pre=--prerelease
+          gh release create "$version" dist/*.zip $pre \
             --title "SATURN.pak $version (Yabadabadoo $core_version)" \
             --notes-file notes.md

@@ -1,12 +1,13 @@
 {
   "name": "SATURN",
-  "version": "v0.3.0.1",
+  "version": "v0.4.0.1",
   "type": "EMU",
   "description": "Sega Saturn: the Yabadabadoo libretro core with its AArch64 SH-2 recompiler. Needs a Saturn BIOS in Bios/SATURN and games in \"Roms/Sega Saturn (SATURN)\".",
   "author": "elderica",
   "repo_url": "https://github.com/elderica/yabadabadoo-nextui",
   "release_filename": "SATURN.pak.zip",
   "changelog": {
+    "v0.4.0.1": "Yabadabadoo 0.4 (the speed update), and a fix for MAC.L/MAC.W in branch delay slots.",
     "v0.3.0.1": "Yabadabadoo 0.3 with the AArch64 SH-2 recompiler and save states that resume after a power off."
   },
   "platforms": [

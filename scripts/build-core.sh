@@ -1,7 +1,8 @@
 #!/bin/sh
 # build-core.sh <platform> <yabadabadoo checkout> <out dir>
 # Builds yabadabadoo_libretro.so for a NextUI platform (tg5040, tg5050, h700)
-# in that platform's toolchain image and checks it runs with the device's glibc.
+# in that platform's toolchain image, with upstream's link-time optimisation
+# (LTO=1), and checks it runs with the device's glibc.
 set -e
 [ $# -eq 3 ] || { echo "usage: $0 <platform> <yabadabadoo checkout> <out dir>" >&2; exit 1; }
 platform=$1
@@ -15,7 +16,7 @@ case $platform in
 esac
 image=ghcr.io/loveretro/$platform-toolchain:latest
 docker run --rm -u "$(id -u):$(id -g)" -v "$src:/src" -w /src/yabause/src/libretro "$image" \
-	sh -c "make platform=$platform clean >/dev/null && make platform=$platform -j\$(nproc)"
+	sh -c "make platform=$platform clean >/dev/null && make platform=$platform LTO=1 -j\$(nproc)"
 so=$src/yabause/src/libretro/yabadabadoo_libretro.so
 # the newest glibc symbol version the core needs must exist on the device
 need=$(objdump -T "$so" | grep -o 'GLIBC_[0-9.]*' | sed 's/GLIBC_//' | sort -uV | tail -n 1)
